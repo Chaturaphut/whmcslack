@@ -43,8 +43,7 @@ function whmcslack_InvoicePaid($vars)
         return;
     $url = $CONFIG['SystemURL'] . '/' . $customadminpath . '/invoices.php?action=edit&id=' . $vars['invoiceid'];
     $data = [];
-    $data['text'] = 'Invoice ' . $vars['invoiceid'] . ' has just been paid! ' .
-        '<' . $url . '|Click here> for details!';
+    $data['text'] = 'Invoice ' . $vars['invoiceid'] . ' ชำระค่าบริการแล้ว '.whmcslack_GetTotalInvoice($vars['invoiceid']).' บาท';
     whmcslack_call($conf['webhook'], $data);
 }
 
@@ -61,6 +60,14 @@ function whmcslack_TicketUserReply($vars)
 function whmcslack_TicketAdminReply($vars)
 {
     whmcslack_TicketChange('admin_reply', $vars);
+}
+
+function whmcslack_GetTotalInvoice($invoiceid){
+    $result = select_query('tblinvoices','subtotal', ['id' => $invoiceid]);
+    if (mysql_num_rows($result) == 0)
+        return '?';
+    $data = mysql_fetch_array($result);
+    return $data['subtotal'];
 }
 
 function whmcslack_GetUserDisplayName($userid)
@@ -96,17 +103,17 @@ function whmcslack_TicketChange($status, $vars)
         case 'user_reply':
             if (!$conf['new_update'])
                 return;
-            $attachement['pretext'] = 'New ticket reply from ' . whmcslack_GetUserDisplayName($vars['userid']);
+            $attachement['pretext'] = 'ตอบโดย ' . whmcslack_GetUserDisplayName($vars['userid']);
             break;
         case 'admin_reply':
             if (!$conf['new_update_admin'])
                 return;
-            $attachement['pretext'] = 'New ticket reply from ' . $vars['admin'];
+            $attachement['pretext'] = 'ตอบโดย ' . $vars['admin'];
             break;
         case 'create':
             if (!$conf['new_ticket'])
                 return;
-            $attachement['pretext'] = 'New ticket from ' . whmcslack_GetUserDisplayName($vars['userid']);
+            $attachement['pretext'] = 'มี Ticket ใหม่จาก ' . whmcslack_GetUserDisplayName($vars['userid']);
             break;
         default:
             return;
